@@ -112,7 +112,7 @@ best = (0, 0)
 for i in range(1, 10):
     model_svm = svm.SVC(C=i/10, probability=True)
     model_svm.fit(X_train, y_train.values.ravel())
-    scores = cross_val_score(model_svm, X_test, y_train.values.ravel(), cv=5)
+    scores = cross_val_score(model_svm, X_test, y_test.values.ravel(), cv=5)
     if scores.mean() > best[0]:
         best = (scores.mean(), i/10)
 print('#### Dla SVM najefektywniejszą wartością C jest: {}'.format(best[1]))
@@ -123,7 +123,7 @@ best = (0, 0)
 for k in range(1, 50):
     knn = KNeighborsClassifier(n_neighbors=k)
     knn.fit(X_train, y_train.values.ravel())
-    scores = cross_val_score(knn, X_test, y_train.values.ravel(), cv=5)
+    scores = cross_val_score(knn, X_test, y_test.values.ravel(), cv=5)
     if scores.mean() > best[0]:
         best = (scores.mean(), k)
 print('#### Dla KNN najefektywniejszą ilością sąsiadów jest: {}'.format(best[1]))
@@ -135,7 +135,7 @@ for i in range(1, 10):
     for j in range(1, 10):
         tree = DecisionTreeClassifier(min_samples_split=i, min_samples_leaf=j)
         tree.fit(X_train, y_train.values.ravel())
-        scores = cross_val_score(tree, X_test, y_train.values.ravel(), cv=5)
+        scores = cross_val_score(tree, X_test, y_test.values.ravel(), cv=5)
         if scores.mean() > best[0]:
             best = (scores.mean(), i, j)
 print('#### Dla Decision Tree najefektywniejszymi wartościami są'
@@ -147,7 +147,7 @@ best = (0, 0)
 for i in range(1, 50):
     forest = RandomForestClassifier(n_estimators=i)
     forest.fit(X_train, y_train.values.ravel())
-    scores = cross_val_score(forest, X_test, y_train.values.ravel(), cv=5)
+    scores = cross_val_score(forest, X_test, y_test.values.ravel(), cv=5)
     if scores.mean() > best[0]:
         best = (scores.mean(), i)
 print('#### Dla Random Forest najefektywniejszą wielkością lasu jest: {}'.format(best[1]))
