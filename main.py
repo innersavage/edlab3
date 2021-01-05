@@ -106,6 +106,7 @@ print('### Najlepszym algorytmem klasyfikacji wydaje się być: {}'.format(best[
 
 
 # Zadanie 4 (2 pkt.)
+print('\n## A teraz poszukajmy najefektywniejszych parametrów dla algorytmów')
 # SVM
 print('### SVM')
 best = (0, 0)
@@ -133,18 +134,18 @@ print('### Decision Tree')
 best = (0, 0, 0)
 for i in range(1, 10):
     for j in range(1, 10):
-        tree = DecisionTreeClassifier(min_samples_split=i, min_samples_leaf=j)
+        tree = DecisionTreeClassifier(min_samples_split=i/10, min_samples_leaf=j)
         tree.fit(X_train, y_train.values.ravel())
         scores = cross_val_score(tree, X_test, y_test.values.ravel(), cv=5)
         if scores.mean() > best[0]:
-            best = (scores.mean(), i, j)
+            best = (scores.mean(), i/10, j)
 print('#### Dla Decision Tree najefektywniejszymi wartościami są'
       ' min_samples_split={} i min_samples_leaf={}'.format(best[1], best[2]))
 
 # Random Forest
 print('### Random Forest')
 best = (0, 0)
-for i in range(1, 50):
+for i in range(47, 50):
     forest = RandomForestClassifier(n_estimators=i)
     forest.fit(X_train, y_train.values.ravel())
     scores = cross_val_score(forest, X_test, y_test.values.ravel(), cv=5)
@@ -154,57 +155,56 @@ print('#### Dla Random Forest najefektywniejszą wielkością lasu jest: {}'.for
 
 
 # Zadanie 5 (2 pkt.)
-
+from matplotlib.colors import ListedColormap
+print("## Narysujmy trochę wykresów!")
 n_classes = 12
-n_trees = 50
-plot_step = 0.01
-
-clf = RandomForestClassifier(n_estimators=n_trees)
+h = 0.2
+i = 1
+pca_2d = PCA(n_components=2)
+clf = RandomForestClassifier(n_estimators=best[1])
 clf.fit(X_train, y_train.values.ravel())
+score = clf.score(X_test, y_test)
 
-print("Przygotowania do tworzenia wykresu...")
-mrks = list(matplotlib.markers.MarkerStyle.markers.keys())[0:n_classes]
-clrs = list(matplotlib.colors.BASE_COLORS.keys())
-y_test.columns = ['Class']
-y_train.columns = ['Class']
-train_dataset = ""
-test_dataset = ""
-train_dataset = X_train
-train_dataset['Class'] = pandas.Series(y_train.values.tolist())
-train_dataset['Class'] = [','.join(map(str, l)) for l in train_dataset['Class']]
-test_dataset = X_test
-test_dataset['Class'] = pandas.Series(y_train.values.tolist())
-test_dataset['Class'] = [','.join(map(str, l)) for l in test_dataset['Class']]
-train_dataset['Class'] = pandas.to_numeric(train_dataset['Class'])
-test_dataset['Class'] = pandas.to_numeric(test_dataset['Class'])
+ax = plt.subplot(1, 2, 1)
 
-x_min, x_max = float(X_train.iloc[:, 0].min()) - 1, float(X_train.iloc[:, 0].max()) + 1
-y_min, y_max = float(X_train.iloc[:, 1].min()) - 1, float(X_train.iloc[:, 1].max()) + 1
-xx, yy = np.meshgrid(np.arange(x_min, x_max, plot_step),
-                         np.arange(y_min, y_max, plot_step))
+X = pca_2d.fit_transform(X_train)
+X_tst = pca_2d.fit_transform(X_test)
+x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
+y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
+xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
 
-Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+cm = plt.cm.RdBu
+cm_bright = ListedColormap(['#FF0000', '#0000FF'])
+
+ax.set_title("Input data")
+ax.scatter(X[:, 0], X[:, 1], c=y_train, cmap=cm_bright, edgecolors='k')
+ax.scatter(X_tst[:, 0], X_tst[:, 1], c=y_test, cmap=cm_bright, alpha=0.6, edgecolors='k')
+ax.set_xlim(xx.min(), xx.max())
+ax.set_ylim(yy.min(), yy.max())
+ax.set_xticks(())
+ax.set_yticks(())
+i += 1
+
+ax = plt.subplot(1, 2, i)
+
+clf = RandomForestClassifier(n_estimators=best[1])
+clf.fit(X, y_train.values.ravel())
+
+x_min, x_max = X_tst[:, 0].min() - .5, X_tst[:, 0].max() + .5
+y_min, y_max = X_tst[:, 1].min() - .5, X_tst[:, 1].max() + .5
+xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+Z = clf.predict_proba(np.c_[xx.ravel(), yy.ravel()])[:, 1]
 Z = Z.reshape(xx.shape)
-fig, axes = plt.subplots(nrows=3, ncols=1, sharex='True', sharey='False', figsize=(12, 12))
-axes[1].contourf(xx, yy, Z)
+ax.contourf(xx, yy, Z, cmap=cm, alpha=.8)
+ax.scatter(X[:, 0], X[:, 1], c=y_train, cmap=cm_bright, edgecolors='k')
+ax.scatter(X_tst[:, 0], X_tst[:, 1], c=y_test, cmap=cm_bright, edgecolors='k', alpha=0.6)
 
-x_min, x_max = float(X_test.iloc[:, 0].min()) - 1, float(X_test.iloc[:, 0].max()) + 1
-y_min, y_max = float(X_test.iloc[:, 1].min()) - 1, float(X_test.iloc[:, 1].max()) + 1
-xx, yy = np.meshgrid(np.arange(x_min, x_max, plot_step),
-                         np.arange(y_min, y_max, plot_step))
-Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
-Z = Z.reshape(xx.shape)
-axes[2].contourf(xx, yy, Z)
+ax.set_xlim(xx.min(), xx.max())
+ax.set_ylim(yy.min(), yy.max())
+ax.set_xticks(())
+ax.set_yticks(())
+ax.set_title('Random Forest')
+ax.text(xx.max() - .3, yy.min() + .3, ('%.2f' % score).lstrip('0'), size=15, horizontalalignment='right')
 
-for i in range(1, n_classes + 1):
-    sliced_train = train_dataset.loc[train_dataset.Class == i]
-    sliced_test = test_dataset.loc[test_dataset.Class == i]
-    sliced_train.plot(x=0, y=1, ax=axes[0], kind='scatter', marker=mrks[i-1], c=clrs[i-1], label="Klasa {}".format(i))
-    sliced_test.plot(x=0, y=1, ax=axes[0], kind='scatter', marker=mrks[i-1], c=clrs[i-1])
-    sliced_train.plot(x=0, y=1, ax=axes[1], kind='scatter', marker=mrks[i-1], c=clrs[i-1], label="Klasa {}".format(i), zorder=1)
-    sliced_test.plot(x=0, y=1, ax=axes[2], kind='scatter', marker=mrks[i-1], c=clrs[i-1], label="Klasa {}".format(i), zorder=1)
-
-plt.legend(loc='upper left')
 plt.tight_layout()
 plt.show()
-
