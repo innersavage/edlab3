@@ -145,7 +145,7 @@ print('#### Dla Decision Tree najefektywniejszymi wartościami są'
 # Random Forest
 print('### Random Forest')
 best = (0, 0)
-for i in range(47, 50):
+for i in range(1, 50):
     forest = RandomForestClassifier(n_estimators=i)
     forest.fit(X_train, y_train.values.ravel())
     scores = cross_val_score(forest, X_test, y_test.values.ravel(), cv=5)
@@ -158,7 +158,7 @@ print('#### Dla Random Forest najefektywniejszą wielkością lasu jest: {}'.for
 from matplotlib.colors import ListedColormap
 print("## Narysujmy trochę wykresów!")
 n_classes = 12
-h = 0.2
+h = 0.02
 i = 1
 pca_2d = PCA(n_components=2)
 clf = RandomForestClassifier(n_estimators=best[1])
